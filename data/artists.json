@@ -1,0 +1,53 @@
+[
+  {
+    "id": 1,
+    "image": "https://groupietrackers.herokuapp.com/api/images/queen.jpeg",
+    "name": "Queen",
+    "members": [
+      "Freddie Mercury",
+      "Brian May",
+      "John Daecon",
+      "Roger Meddows-Taylor",
+      "Mike Grose",
+      "Barry Mitchell",
+      "Doug Fogie"
+    ],
+    "creationDate": 1970,
+    "firstAlbum": "13-07-1973",
+    "relations": ""
+  },
+  {
+    "id": 2,
+    "image": "https://groupietrackers.herokuapp.com/api/images/gorillaz.jpeg",
+    "name": "Gorillaz",
+    "members": ["Stuart Pot", "Murdoc Niccals", "Noodle", "Russel Hobbs"],
+    "creationDate": 1998,
+    "firstAlbum": "26-03-2001",
+    "relations": ""
+  },
+  {
+    "id": 3,
+    "image": "https://static.wikia.nocookie.net/travisscott/images/e/e5/Travis_Scott.jpg/revision/latest?cb=20250316033409",
+    "name": "Travis Scott",
+    "members": ["Jacques Bermon Webster II"],
+    "creationDate": 2013,
+    "firstAlbum": "04-09-2015",
+    "relations": ""
+  },
+  {
+    "id": 4,
+    "image": "https://groupietrackers.herokuapp.com/api/images/foofighters.jpeg",
+    "name": "Foo Fighters",
+    "members": [
+      "Dave Grohl",
+      "Nate Mendel",
+      "Taylor Hawkins",
+      "Chris Shiflett",
+      "Pat Smear",
+      "Rami Jaffee"
+    ],
+    "creationDate": 1994,
+    "firstAlbum": "04-07-1995",
+    "relations": ""
+  }
+]

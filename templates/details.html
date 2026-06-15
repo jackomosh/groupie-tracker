@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Artist.Name}} Details</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app detail-view">
+        <a href="/" class="btn-back">⬅ Return to Registry</a>
+        
+        <section class="profile-header">
+            <img src="{{.Artist.Image}}" alt="{{.Artist.Name}}">
+            <div class="profile-info">
+                <h1>{{.Artist.Name}}</h1>
+                <p><strong>Formed In:</strong> {{.Artist.CreationDate}}</p>
+                <p><strong>First Album Release:</strong> {{.Artist.FirstAlbum}}</p>
+            </div>
+        </section>
+
+        <div class="flex-layout">
+            <article class="pane">
+                <h2>👥 Band Lineup</h2>
+                <ul>
+                    {{range .Artist.Members}}
+                    <li>{{.}}</li>
+                    {{end}}
+                </ul>
+            </article>
+
+            <article class="pane">
+                <h2>📍 Tour Dates & Scheduled Locations</h2>
+                <div class="relations-map">
+                    {{range $loc, $dates := .Relation.DatesLocations}}
+                    <div class="location-group">
+                        <strong class="location-title">{{$loc}}</strong>
+                        <ul>
+                            {{range $dates}}
+                            <li>📅 {{.}}</li>
+                            {{end}}
+                        </ul>
+                    </div>
+                    {{end}}
+                </div>
+            </article>
+        </div>
+    </div>
+</body>
+</html>

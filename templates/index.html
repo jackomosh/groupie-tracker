@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Groupie Tracker Hub</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app">
+        <header>
+            <h1>🎵 Groupie Tracker</h1>
+            <p>Explore performance metrics, band rosters, and real-time event updates.</p>
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Search by band name or member roster...">
+            </div>
+        </header>
+
+        <main class="grid" id="artists-grid">
+            {{range .}}
+            <div class="card" onclick="window.location.href='/artist?id={{.ID}}'">
+                <img src="{{.Image}}" alt="{{.Name}}" loading="lazy">
+                <div class="card-body">
+                    <h3>{{.Name}}</h3>
+                    <p class="tag">Since {{.CreationDate}}</p>
+                </div>
+            </div>
+            {{end}}
+        </main>
+    </div>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
