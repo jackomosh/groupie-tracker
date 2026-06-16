@@ -16,7 +16,7 @@ An optimized data manipulation web platform displaying structural relationship m
 
 ### 🚀 Usage
 ```bash
-$ go run .
+go run .
 
 ```
 
