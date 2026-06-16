@@ -1,4 +1,4 @@
-# 🎵 Groupie Trackers Hub
+# 🎵 Groupie Tracker
 
 An optimized data manipulation web platform displaying structural relationship metrics, concert distributions, and asset logs for performing artists using a pure Go standard library backend.
 
@@ -16,7 +16,11 @@ An optimized data manipulation web platform displaying structural relationship m
 
 ### 🚀 Usage
 ```bash
-$ go run . [flag]
+$ go run .
+
+```
+
+---
 
 ## 🛠️ Commands Reference
 
@@ -24,3 +28,5 @@ $ go run . [flag]
 Validate that data mapping layers parse mock endpoints cleanly:
 ```bash
 go test -v ./...
+
+```
