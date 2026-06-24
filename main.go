@@ -2,10 +2,9 @@ package main
 
 import (
 	"context"
-	"embed" // <-- REQUIRED FOR EMBEDDING ASSETS
-	"encoding/json"
 	"errors"
 	"fmt"
+	"encoding/json"
 	"html/template"
 	"log"
 	"net/http"
@@ -18,9 +17,6 @@ import (
 
 	"groupie-tracker/api"
 )
-
-//go:embed templates/*.html static/**/* static/*
-var embeddedFileSystem embed.FS
 
 var (
 	registry  *api.UnifiedRegistry
@@ -37,26 +33,21 @@ func main() {
 	}
 	registry = data
 
-	// Compile tracking views directly out of the embedded binary filesystem context
-	templates = template.Must(template.ParseFS(embeddedFileSystem, "templates/*.html"))
+	// Compile tracking views
+	templates = template.Must(template.ParseGlob("templates/*.html"))
 
 	mux := http.NewServeMux()
 	
-	// Server static assets safely straight from binary memory
-	mux.Handle("/static/", http.FileServer(http.FS(embeddedFileSystem)))
+	// Secure routing controls
+	fs := http.FileServer(http.Dir("static"))
+	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 	
 	mux.HandleFunc("/", homeHandler)
 	mux.HandleFunc("/artist", artistDetailsHandler)
 	mux.HandleFunc("/api/search", apiSearchHandler)
 
-	// Vercel routes traffic using $PORT environment allocations dynamically
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
 	server := &http.Server{
-		Addr:         ":" + port,
+		Addr:         ":8080",
 		Handler:      mux,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
@@ -65,7 +56,7 @@ func main() {
 
 	// Graceful shutdown strategy
 	go func() {
-		fmt.Printf("Server running smoothly on port %s\n", port)
+		fmt.Println("Server running smoothly at http://localhost:8080")
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Unexpected listener termination: %v", err)
 		}
@@ -90,7 +81,6 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "404 Not Found", http.StatusNotFound)
 		return
 	}
-	// Target file name without directory prefixes because it maps cleanly into the FS
 	if err := templates.ExecuteTemplate(w, "index.html", registry.Artists); err != nil {
 		http.Error(w, "500 Internal Error", http.StatusInternalServerError)
 	}
@@ -132,10 +122,12 @@ func artistDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Client-Server Event: Real-time API query filter backend engine
 func apiSearchHandler(w http.ResponseWriter, r *http.Request) {
 	query := strings.ToLower(r.URL.Query().Get("q"))
 	w.Header().Set("Content-Type", "application/json")
 
+	// Standard data aggregation algorithm mapping partial inputs
 	var filtered []api.Artist
 	for _, art := range registry.Artists {
 		if strings.Contains(strings.ToLower(art.Name), query) {
@@ -150,6 +142,7 @@ func apiSearchHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Fallback to empty array allocation bounds instead of returning null values
 	if filtered == nil {
 		filtered = []api.Artist{}
 	}
