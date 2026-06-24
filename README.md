@@ -5,11 +5,6 @@ An optimized data manipulation web platform displaying structural relationship m
 ---
 
 ## 👥 Authors
-**Clinton Amayo**  *Software developer.
-
-
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/amayo-clinton)
-[![WhatsApp](https://img.shields.io/badge/WhatsApp-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://wa.me/254792057306)
 
 **Jack Omondi** *Lead Full Stack Developer, Tech Innovator and Digital Champion
 
