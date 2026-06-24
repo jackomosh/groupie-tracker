@@ -1,14 +1,20 @@
 package handler
 
 import (
+	"embed"
+	"encoding/json"
 	"html/template"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 
-	// Replace "groupie-tracker" with the exact name declared in your go.mod
-	"groupie-tracker/api" 
+	"groupie-tracker/api" // Ensure this matches your go.mod module path precisely
 )
+
+// Go Embed pulls assets relative to the current file. Since this is inside 'api/', we step up one directory level.
+//go:embed ../templates/*.html ../static/**/* ../static/*
+var embeddedFileSystem embed.FS
 
 var (
 	registry *api.UnifiedRegistry
@@ -17,7 +23,7 @@ var (
 	initErr  error
 )
 
-// initializeDependencies ensures data is downloaded exactly once when the serverless container wakes up
+// initializeDependencies executes exactly once when the serverless container spins up
 func initializeDependencies() {
 	client := api.NewClient()
 	registry, initErr = client.FetchData()
@@ -25,44 +31,61 @@ func initializeDependencies() {
 		return
 	}
 
-	// Compile tracking views using relative directory patterns for Vercel
-	tmpl, initErr = template.ParseGlob("../templates/*.html")
+	// Parse templates out of the embedded filesystem layer safely
+	tmpl, initErr = template.ParseFS(embeddedFileSystem, "../templates/*.html")
 }
 
-// Handler is the entry point Vercel targets to process incoming HTTP requests
+// Handler is the entry point Vercel targets to process incoming serverless calls
 func Handler(w http.ResponseWriter, r *http.Request) {
 	once.Do(initializeDependencies)
 
 	if initErr != nil {
-		http.Error(w, "500 Internal Synchronisation Error: "+initErr.Error(), http.StatusInternalServerError)
+		http.Error(w, "500 Internal Initialization Error: "+initErr.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Simple Serverless Mux Routing Pattern
 	path := r.URL.Path
-	if path == "/" {
+
+	// Route Static assets directly out of the embedded binary filesystem
+	if strings.HasPrefix(path, "/static/") {
+		// Strip the nested directory prefix so it lines up with the embedded structure bounds cleanly
+		fs := http.FileServer(http.FS(embeddedFileSystem))
+		// Prepend the step-up reference to point to our layout tree structure mapping
+		r.URL.Path = "../" + path
+		fs.ServeHTTP(w, r)
+		return
+	}
+
+	// Serverless HTTP Route Mux Matrix
+	switch path {
+	case "/":
 		homeHandler(w, r)
-	} else if path == "/artist" {
+	case "/artist":
 		artistDetailsHandler(w, r)
-	} else if path == "/api/search" {
+	case "/api/search":
 		apiSearchHandler(w, r)
-	} else {
-		http.Error(w, "404 Route Not Found", http.StatusNotFound)
+	default:
+		http.Error(w, "404 Not Found", http.StatusNotFound)
 	}
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	if err := tmpl.ExecuteTemplate(w, "index.html", registry.Artists); err != nil {
-		http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
+		http.Error(w, "500 Internal Server Error: "+err.Error(), http.StatusInternalServerError)
 	}
 }
 
 func artistDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := r.URL.Query().Get("id")
-	var targetArtist *api.Artist
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "400 Bad Request Parameters", http.StatusBadRequest)
+		return
+	}
 
+	var targetArtist *api.Artist
 	for _, art := range registry.Artists {
-		if string(strconv.Itoa(art.ID)) == idStr || art.Name == idStr {
+		if art.ID == id {
 			targetArtist = &art
 			break
 		}
@@ -78,11 +101,11 @@ func artistDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		Relation api.Relation
 	}{
 		Artist:   *targetArtist,
-		Relation: registry.Relations[targetArtist.ID],
+		Relation: registry.Relations[id],
 	}
 
 	if err := tmpl.ExecuteTemplate(w, "details.html", data); err != nil {
-		http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
+		http.Error(w, "500 Internal Error", http.StatusInternalServerError)
 	}
 }
 
