@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
+	// "fmt"
 	"encoding/json"
 	"html/template"
 	"log"
@@ -24,6 +24,12 @@ var (
 )
 
 func main() {
+	// 1. Fetch dynamic deployment port from Vercel environment variables
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080" // Fallback local testing port
+	}
+
 	// Initialize API dependencies cleanly
 	client := api.NewClient()
 	log.Println("Downloading external tracker metrics into runtime environment memory...")
@@ -47,23 +53,26 @@ func main() {
 	mux.HandleFunc("/api/search", apiSearchHandler)
 
 	server := &http.Server{
-		Addr:         ":8080",
+		Addr:         ":" + port, // Bind dynamically
 		Handler:      mux,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}
 
-	// Graceful shutdown strategy
+	// Graceful shutdown channel setup
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	// Run listener directly on the main routine to keep container active
 	go func() {
-		fmt.Println("Server running smoothly at http://localhost:8080")
+		log.Printf("Server running smoothly on port %s", port)
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Unexpected listener termination: %v", err)
 		}
 	}()
 
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	// Wait here until Vercel shuts down or restarts the container
 	<-stop
 
 	log.Println("Stopping runtime operations gracefully...")
@@ -122,12 +131,10 @@ func artistDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Client-Server Event: Real-time API query filter backend engine
 func apiSearchHandler(w http.ResponseWriter, r *http.Request) {
 	query := strings.ToLower(r.URL.Query().Get("q"))
 	w.Header().Set("Content-Type", "application/json")
 
-	// Standard data aggregation algorithm mapping partial inputs
 	var filtered []api.Artist
 	for _, art := range registry.Artists {
 		if strings.Contains(strings.ToLower(art.Name), query) {
@@ -142,7 +149,6 @@ func apiSearchHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Fallback to empty array allocation bounds instead of returning null values
 	if filtered == nil {
 		filtered = []api.Artist{}
 	}
