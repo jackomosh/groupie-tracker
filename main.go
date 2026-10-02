@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"errors"
-	// "fmt"
+	"embed"
 	"encoding/json"
+	"errors"
 	"html/template"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -17,6 +18,9 @@ import (
 
 	"groupie-tracker/api"
 )
+
+//go:embed templates/*.html static
+var embeddedFiles embed.FS
 
 var (
 	registry  *api.UnifiedRegistry
@@ -39,15 +43,25 @@ func main() {
 	}
 	registry = data
 
-	// Compile tracking views
-	templates = template.Must(template.ParseGlob("templates/*.html"))
+	// Compile templates from embedded files
+	templates = template.Must(
+		template.ParseFS(embeddedFiles, "templates/*.html"),
+	)
 
 	mux := http.NewServeMux()
-	
-	// Secure routing controls
-	fs := http.FileServer(http.Dir("static"))
-	mux.Handle("/static/", http.StripPrefix("/static/", fs))
-	
+
+	// Serve static assets from embedded files
+	staticFiles, err := fs.Sub(embeddedFiles, "static")
+	if err != nil {
+		log.Fatalf("Failed to load static files: %v", err)
+	}
+
+	staticServer := http.FileServer(http.FS(staticFiles))
+	mux.Handle(
+		"/static/",
+		http.StripPrefix("/static/", staticServer),
+	)
+
 	mux.HandleFunc("/", homeHandler)
 	mux.HandleFunc("/artist", artistDetailsHandler)
 	mux.HandleFunc("/api/search", apiSearchHandler)
@@ -78,7 +92,7 @@ func main() {
 	log.Println("Stopping runtime operations gracefully...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	if err := server.Shutdown(ctx); err != nil {
 		log.Fatalf("Server forced to exit abruptly: %v", err)
 	}
